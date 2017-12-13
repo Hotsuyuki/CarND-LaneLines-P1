@@ -1,56 +1,88 @@
-# **Finding Lane Lines on the Road** 
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+# **Finding Lane Lines on the Road**
 
-<img src="examples/laneLines_thirdPass.jpg" width="480" alt="Combined Image" />
-
-Overview
+## Writeup of CarND-LaneLines-P1
 ---
 
-When we drive, we use our eyes to decide where to go.  The lines on the road that show us where the lanes are act as our constant reference for where to steer the vehicle.  Naturally, one of the first things we would like to do in developing a self-driving car is to automatically detect lane lines using an algorithm.
+**Finding Lane Lines on the Road**
 
-In this project you will detect lane lines in images using Python and OpenCV.  OpenCV means "Open-Source Computer Vision", which is a package that has many useful tools for analyzing images.  
+The goals / steps of this project are the following:
+* Make a pipeline that finds lane lines on the road
+* Reflect on your work in a written report
 
-To complete the project, two files will be submitted: a file containing project code and a file containing a brief write up explaining your solution. We have included template files to be used both for the [code](https://github.com/udacity/CarND-LaneLines-P1/blob/master/P1.ipynb) and the [writeup](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md).The code file is called P1.ipynb and the writeup template is writeup_template.md 
-
-To meet specifications in the project, take a look at the requirements in the [project rubric](https://review.udacity.com/#!/rubrics/322/view)
-
-
-Creating a Great Writeup
----
-For this project, a great writeup should provide a detailed response to the "Reflection" section of the [project rubric](https://review.udacity.com/#!/rubrics/322/view). There are three parts to the reflection:
-
-1. Describe the pipeline
-
-2. Identify any shortcomings
-
-3. Suggest possible improvements
-
-We encourage using images in your writeup to demonstrate how your pipeline works.  
-
-All that said, please be concise!  We're not looking for you to write a book here: just a brief description.
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup. Here is a link to a [writeup template file](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md). 
-
-
-The Project
 ---
 
-## If you have already installed the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) you should be good to go!   If not, you should install the starter kit to get started on this project. ##
+### Reflection
 
-**Step 1:** Set up the [CarND Term1 Starter Kit](https://classroom.udacity.com/nanodegrees/nd013/parts/fbf77062-5703-404e-b60c-95b78b2f3f9e/modules/83ec35ee-1e02-48a5-bdb7-d244bd47c2dc/lessons/8c82408b-a217-4d09-b81d-1bda4c6380ef/concepts/4f1870e0-3849-43e4-b670-12e6f2d4b7a7) if you haven't already.
+### 1. Describe your pipeline. As part of the description, explain how you modified the `draw_lines()` function.
 
-**Step 2:** Open the code in a Jupyter Notebook
+My pipeline consisted of 5 steps. First, I converted the images to grayscale, then blurred it using Gaussian smoothing to make it easier to detect edges, where the `kernel_size` is 5. After blurring, I detected edges in the image and masked it with a trapezoid whose
+* the upper base is (x, y) = (0.45×`xsize`, 0.6×`ysize`) ~ (0.55×`xsize`, 0.6×`ysize`) ,
+* the lower base is bottom of the image ,
+* the height is 0.4×`ysize` .
 
-You will complete the project code in a Jupyter notebook.  If you are unfamiliar with Jupyter Notebooks, check out <A HREF="https://www.packtpub.com/books/content/basics-jupyter-notebook-and-python" target="_blank">Cyrille Rossant's Basics of Jupyter Notebook and Python</A> to get started.
+(where `xsize` is the horizontal size of the image, `ysize` is the vertical size of the image)
 
-Jupyter is an Ipython notebook where you can run blocks of code and see results interactively.  All the code for this project is contained in a Jupyter notebook. To start Jupyter in your browser, use terminal to navigate to your project directory and then run the following command at the terminal prompt (be sure you've activated your Python 3 carnd-term1 environment as described in the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) installation instructions!):
+<div style="text-align:center">
+<img src="./test_images_output/masked_edge_image_interest_region.jpg">
+</div>
 
-`> jupyter notebook`
+In order to draw a single line on the left and right lanes, I modified the `draw_lines()` function by [RANSAC algorithm](http://scikit-learn.org/stable/auto_examples/linear_model/plot_ransac.html). First, the points of the lines transformed by Hough method were classified whether left line lane or right line lane. After all of the points were classified, the points were fitted into a straight line by [RANSAC algorithm](http://scikit-learn.org/stable/auto_examples/linear_model/plot_ransac.html). To connect the line straight, I calculated a slope `a_line` and a intercept `b_line`, which were averaged by past `N`(this time is 5) frames data in order to decrease an error, from the result of [RANSAC](http://scikit-learn.org/stable/auto_examples/linear_model/plot_ransac.html) fitting. Then draw the line on the image using the the slope `a_line` and the intercept `b_line` within the range of interest region.
 
-A browser window will appear showing the contents of the current directory.  Click on the file called "P1.ipynb".  Another browser window will appear displaying the notebook.  Follow the instructions in the notebook to complete the project.  
 
-**Step 3:** Complete the project and submit both the Ipython notebook and the project writeup
+<div style="text-align:center">
+<img src="./test_images_output/output_image.jpg">
+</div>
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+If you'd like to include images to show how the pipeline works, here is how to include an image:
+```
+import matplotlib.image as mpimg
 
+file_name = 'solidWhiteCurve.jpg'
+image = mpimg.imread('test_images/' + file_name)
+```
+how to show the result of the image:
+```
+import matplotlib.pyplot as plt
+
+plt.imshow(output_image)
+```
+
+If you'd like to include videos to show how the pipeline works, here is how to include an image:
+```
+from moviepy.editor import VideoFileClip
+
+file_name = 'solidWhiteRight.mp4'
+clip = VideoFileClip('test_videos/' + file_name)
+```
+how to show the result of the vidoe:
+```
+from IPython.display import HTML
+
+HTML("""
+<video width="960" height="540" controls>
+  <source src="{0}">
+</video>
+""".format(output_clip))
+```
+
+### 2. Identify potential shortcomings with your current pipeline
+
+
+One potential shortcoming would be that this pipeline could not fit sharp curved line lane well because the RANSAC algorithm in the program was for straight line fitting. If the line lane is not so much curved sharply (e.g. curved line lane in highway), this pipeline will work will because the curved line lane can be recognized as straight line lane only in front of the car. When the program is implemented in the sharply curved line lane, the result would be below :
+
+<div style="text-align:center">
+<img src="./test_images_output/output_sharplyCurved.jpg">
+</div>
+
+Another shortcoming could be that this pipeline was hard to recognize the line lane when the color of the road was close to the one of line lane because openCV was using RGB information. Below is the one scene of the result of `challeng.mp4` :
+
+<div style="text-align:center">
+<img src="./test_images_output/output_challenge.jpg">
+</div>
+
+
+### 3. Suggest possible improvements to your pipeline
+
+A possible improvement would be to use another fitting algorithm which can also deal with curve fitting (second-order polynomial) such as [Robust nonlinear regression](http://scipy-cookbook.readthedocs.io/items/robust_regression.html). Moreover, based on the assumption that line lanes would not move significantly, differential between slopes `a_line` in each frames could be used instead of averaging the slopes `a_line` because the differential should be around zero.
+
+Another potential improvement could be to add other sensors besides RGB sensor such as LiDAR, which can obtain reflectivity information, and [blend the results of these sensors to make the lane detection more robust](https://www.google.com/amp/gpsworld.com/a-comparison-of-lidar-and-camera-based-lane-detection-systems/amp/). Especially when the weather is dark, LiDAR-based method has less error than camera-based one.
